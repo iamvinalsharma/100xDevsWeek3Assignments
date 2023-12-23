@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken');
+const zod = require('zod');
+
 const jwtPassword = 'secret';
 
+const emailSchema = zod.string().email();
+const passwordSchema = zod.string().min(6);
 
 /**
  * Generates a JWT for a given username and password.
@@ -13,8 +17,17 @@ const jwtPassword = 'secret';
  *                        Returns null if the username is not a valid email or
  *                        the password does not meet the length requirement.
  */
+
 function signJwt(username, password) {
     // Your code here
+    const usernameResponse = emailSchema.safeParse(username);
+    const passwordResponse = passwordSchema.safeParse(password);
+    if (usernameResponse.success && passwordResponse.success) {
+        const token = jwt.sign({username}, jwtPassword);
+        return token;
+    } else {
+        return null;
+    }
 }
 
 /**
@@ -25,8 +38,15 @@ function signJwt(username, password) {
  *                    Returns false if the token is invalid, expired, or not verified
  *                    using the secret key.
  */
+
 function verifyJwt(token) {
     // Your code here
+    try {
+        jwt.verify(token, jwtPassword);
+        return true;
+    } catch (e) {
+        return false;
+    }
 }
 
 /**
@@ -36,10 +56,16 @@ function verifyJwt(token) {
  * @returns {object|false} The decoded payload of the JWT if the token is a valid JWT format.
  *                         Returns false if the token is not a valid JWT format.
  */
+
 function decodeJwt(token) {
     // Your code here
+    const decode = jwt.decode(token);
+    if (decode) {
+        return true;
+    } else {
+        return false;
+    }
 }
-
 
 module.exports = {
   signJwt,
@@ -47,3 +73,26 @@ module.exports = {
   decodeJwt,
   jwtPassword,
 };
+
+// Testing the code:
+
+// 01:49 $ npx jest ./tests/
+//  PASS  tests/index.spec.js
+//   signJwt
+//     ✓ signs a jwt correctly (6 ms)
+//     ✓ returns null if invalid email
+//     ✓ returns null if small pw
+//   decodeJwt
+//     ✓ decodes a jwt with diff password correctly (1 ms)
+//     ✓ decodes a jwt with same password correctly (1 ms)
+//     ✓ cant decode a non jwt string
+//   verifyJwt
+//     ✓ cant decode a jwt with diff password correctly (3 ms)
+//     ✓ decodes a jwt with same password correctly (2 ms)
+//     ✓ cant decode a non jwt string
+
+// Test Suites: 1 passed, 1 total
+// Tests:       9 passed, 9 total
+// Snapshots:   0 total
+// Time:        0.648 s
+// Ran all test suites matching /.\/tests\//i.
